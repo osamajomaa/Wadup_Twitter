@@ -13,13 +13,17 @@ import com.mongodb.DuplicateKeyException;
 import com.mongodb.MongoClient;
 
 
-public class database {
+public class Database {
 	
-	private DB db;
-	private Map<String, String> Languages;
+	public  DB db;
+	public Map<String, String> Languages;
+	
+	public Database() {
+		loadLangs();
+	}
 	
 	public void loadLangs() {
-		File fin = new File("utils/langs.txt");
+		File fin = new File("utils/twitter_langs.txt");
 		Scanner reader = null;
 		try {
 			reader = new Scanner(fin);
@@ -51,17 +55,15 @@ public class database {
 		DBObject options = new BasicDBObject();
 		options.put("autoIndexId", true);
 		db.createCollection(collName, options);
-		
 	}
 	
-	public void createUniqueIndex(DBCollection coll, String fieldName) {
+	public void createUniqueIndex(String collName, String fieldName) {
+		DBCollection coll = db.getCollection(collName);
 		DBObject index = new BasicDBObject();
 		index.put(fieldName,1);
-
 		DBObject nameIndexOptions = new BasicDBObject();
 		nameIndexOptions.put("unique", true);
-		nameIndexOptions.put("sparse", true);
-		
+		nameIndexOptions.put("sparse", true);		
 		coll.createIndex(index, nameIndexOptions);
 	}
 	
@@ -93,7 +95,7 @@ public class database {
 		DBCollection coll = db.getCollection("HashTag");
 		BasicDBList langs = new BasicDBList();
 		for(Map.Entry<String, String> lang : Languages.entrySet())
-			langs.add(new BasicDBObject().append(lang.getValue(), 0));
+			langs.add(new BasicDBObject().append(lang.getKey(), 0));
 		BasicDBObject HashTag = new BasicDBObject("HashTagName", tagName)
 		.append("Langs", langs)
 		.append("CoOccurHashTags", new BasicDBList())

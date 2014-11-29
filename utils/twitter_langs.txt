@@ -1,0 +1,13 @@
+fr		French
+en		English
+ar		Arabic
+ja		Japanese
+es		Spanish
+de		German
+it		Italian
+pt		Portuguese
+ko		Korean
+tr		Turkish
+ru		Russian
+nl		Dutch
+he		Hebrew
