@@ -7,6 +7,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
+
+import twitter4j.GeoLocation;
 import twitter4j.HashtagEntity;
 import twitter4j.StallWarning;
 import twitter4j.Status;
@@ -53,6 +55,8 @@ public class Streamer {
 	
 	public List<String> getAllMentions(UserMentionEntity[] mentionedUsers) {
 		List<String> mentions = new ArrayList<String>();
+		if (mentionedUsers == null)
+			return mentions;
 		for(int i=0; i<mentionedUsers.length; i++)
 			mentions.add(mentionedUsers[0].getScreenName());
 		return mentions;
@@ -60,39 +64,49 @@ public class Streamer {
 	
 	public List<String> getAllURLs(URLEntity[] EntityURLs) {
 		List<String> urls = new ArrayList<String>();
+		if (EntityURLs == null)
+			return urls;
 		for(int i=0; i<EntityURLs.length; i++)
 			urls.add(EntityURLs[0].getURL());
 		return urls;
 	}
 	
-	public Set<String> getAllHashTags(HashtagEntity[] EntityTags, String locale) {
+	public Set<String> getAllHashTags(HashtagEntity[] EntityTags, String locale) {			
 		Set<String> hashtags = new HashSet<String>();
+		if (EntityTags == null)
+			return hashtags;
 		for(int i=0; i<EntityTags.length; i++)
 			hashtags.add(EntityTags[0].getText().toLowerCase(new Locale(locale)));
 		return hashtags;
 	}
 	
 	public void addUserToDB(User user, List<String> mentions, Database db) {
+		if (user == null)
+			return;
 		db.addUser(user.getName(), user.getScreenName());
 		for(String mentionee : mentions) 
 			db.addMentionedBy(mentionee, user.getName());
 	}
 	
-	public void addHashTagToDB(Set<String> hashTags, User user, String lang, Database db) {
+	public void addHashTagToDB(Set<String> hashTags, User user, String lang, GeoLocation location, Database db) {		
 		for(String hashtag : hashTags) {
 			db.addHashTag(hashtag);
 			Set<String> coOccurTags = new HashSet<String>(hashTags);
 			coOccurTags.remove(hashtag);
 			db.addCoOccuringHashTag(hashtag, coOccurTags);
-			db.adduserUsingHashTag(hashtag, user.getScreenName());
+			if (user != null)
+				db.adduserUsingHashTag(hashtag, user.getScreenName());
 			db.IncrementLang(lang, hashtag);
+			if (location != null)
+				db.addHashTagLocation(hashtag, location.getLatitude(), location.getLongitude());
 		}
 	}
 	
 	public void addLinkToDB(User user, List<String> links, Database db) {
 		for(String link : links) {
 			db.addLink(link);
-			db.addLinkUsedBy(user.getScreenName(), link);
+			if (user != null)
+				db.addLinkUsedBy(user.getScreenName(), link);
 		}
 	}
 	
@@ -134,9 +148,8 @@ public class Streamer {
                 	List<String> urls = getAllURLs(status.getURLEntities());
                 	List<String> mentions = getAllMentions(status.getUserMentionEntities());
                 	addUserToDB(user, mentions, db);
-                	addHashTagToDB(hashTags, user, status.getLang(), db);
+                	addHashTagToDB(hashTags, user, status.getLang(), status.getGeoLocation(), db);
                 	addLinkToDB(user, urls, db);
-                    //System.out.println("@" + status.getUser().getScreenName() + " - " + status.getText());
             	}     	
             }
 

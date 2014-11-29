@@ -139,7 +139,7 @@ public class Database {
 		coll.update(searchObject, modifiedObject);
 	}
 	
-	public void addHashTagLocation(String tagName, String latitude, String longitude) {
+	public void addHashTagLocation(String tagName, double latitude, double longitude) {
 		DBCollection coll = db.getCollection("HashTag");
 		DBObject searchObject = new BasicDBObject();
 		searchObject.put("HashTagName", tagName);
