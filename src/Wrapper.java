@@ -8,6 +8,7 @@ public final class Wrapper {
 	private Wrapper() {}
 	
 	public static void main(String[] args) {
+
 		Database db = new Database();
 		
 		db.createDB(SERVER_NAME, PORT, DATABASE_NAME);

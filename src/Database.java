@@ -1,6 +1,7 @@
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.UnknownHostException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
@@ -20,10 +21,12 @@ public class Database {
 	
 	public Database() {
 		loadLangs();
+		
 	}
 	
 	public void loadLangs() {
 		File fin = new File("utils/twitter_langs.txt");
+		Languages = new HashMap<String,String>();
 		Scanner reader = null;
 		try {
 			reader = new Scanner(fin);
@@ -91,15 +94,23 @@ public class Database {
 		coll.update(searchObject, modifiedObject);
 	}
 	
+	public void updateMentionedByCount(String mentionee) {
+		DBCollection coll = db.getCollection("User");
+		BasicDBObject updateCommand = new BasicDBObject("$inc", new BasicDBObject("MentionCount", 1));
+		BasicDBObject query = new BasicDBObject("ScreenName", mentionee);
+		coll.update(query, updateCommand);
+	}
+	
 	public void addHashTag(String tagName) {
 		DBCollection coll = db.getCollection("HashTag");
 		BasicDBList langs = new BasicDBList();
 		for(Map.Entry<String, String> lang : Languages.entrySet())
-			langs.add(new BasicDBObject().append(lang.getKey(), 0));
+			langs.add(new BasicDBObject("Lang", lang.getKey()).append("Count", 0));
 		BasicDBObject HashTag = new BasicDBObject("HashTagName", tagName)
 		.append("Langs", langs)
 		.append("CoOccurHashTags", new BasicDBList())
 		.append("HashTagUsers", new BasicDBList())
+		.append("HashTagCount", 0)
 		.append("Locations", new BasicDBList());
 		try {
 			coll.insert(HashTag);
@@ -108,11 +119,18 @@ public class Database {
 		}		
 	}
 	
+	public void updateHashTagCount(String tagName) {
+		DBCollection coll = db.getCollection("HashTag");
+		BasicDBObject updateCommand = new BasicDBObject("$inc", new BasicDBObject("HashTagCount", 1));
+		BasicDBObject query = new BasicDBObject("HashTagName", tagName);
+		coll.update(query, updateCommand);
+	}
+	
 	
 	public void IncrementLang(String lang, String tagName) {
 		DBCollection coll = db.getCollection("HashTag");
-		BasicDBObject updateCommand = new BasicDBObject("$inc", new BasicDBObject("Langs.$."+lang, 1));
-		BasicDBObject query = new BasicDBObject();
+		BasicDBObject updateCommand = new BasicDBObject("$inc", new BasicDBObject("Langs.$.Count", 1));
+		BasicDBObject query = new BasicDBObject("HashTagName", tagName).append("Langs.Lang", lang);
 	    query.put("HashTagName", tagName);
 		coll.update(query, updateCommand);
 	}
@@ -126,7 +144,7 @@ public class Database {
 		searchObject.put("HashTagName", tagName);
 		DBObject modifiedObject = new BasicDBObject();
 		BasicDBObject allTagsObject = new BasicDBObject().append("$each", allTags);
-		modifiedObject.put("$push", new BasicDBObject().append("CoOccuringTags", allTagsObject));
+		modifiedObject.put("$push", new BasicDBObject().append("CoOccurHashTags", allTagsObject));
 		coll.update(searchObject, modifiedObject);
 	}
 	
@@ -152,6 +170,7 @@ public class Database {
 	public void addLink(String linkString) {
 		DBCollection users = db.getCollection("Link");
 		BasicDBObject link = new BasicDBObject("LinkString", linkString)
+							.append("LinkCount", 0)
 							.append("UsedBy", new BasicDBList());
 		try {
 			users.insert(link);
@@ -161,12 +180,19 @@ public class Database {
 	}
 	
 	public void addLinkUsedBy(String user, String linkString) {
-		DBCollection coll = db.getCollection("User");
+		DBCollection coll = db.getCollection("Link");
 		DBObject searchObject = new BasicDBObject();
 		searchObject.put("LinkString", linkString);
 		DBObject modifiedObject = new BasicDBObject();
 		modifiedObject.put("$push", new BasicDBObject().append("UsedBy", user));
 		coll.update(searchObject, modifiedObject);
+	}
+	
+	public void updateLinkCount(String linkString) {
+		DBCollection coll = db.getCollection("Link");
+		BasicDBObject updateCommand = new BasicDBObject("$inc", new BasicDBObject("LinkCount", 1));
+		BasicDBObject query = new BasicDBObject("LinkString", linkString);
+		coll.update(query, updateCommand);
 	}
 
 }
