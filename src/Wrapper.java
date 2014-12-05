@@ -14,6 +14,7 @@ public final class Wrapper {
 		
 		db.createDB(SERVER_NAME, PORT, DATABASE_NAME);
 		
+		/*
 		db.createCollection("User");
 		db.createUniqueIndex("User", "ScreenName");
 		
@@ -25,20 +26,27 @@ public final class Wrapper {
 		
 		Streamer twitterStreamer = new Streamer();
 		twitterStreamer.grabber(db);
-		
-		
-		
-		
-		
-		//db.getFlatFile("User", "ScreenName", "MentionedBy", "MentionedBy.txt");
-		//db.writeBackToDB(args[0], args[1], args[2]);
-		db.getAllSorted(args[0], args[1], args[2]);
-		System.out.println("Done!");
-		/*
-		Database db = new Database();
-		
-		
 		*/
+		
+		/*
+		String dbFile = "DBFiles/MentionedBy.db";
+		String newField = "MentionedByCount";
+		String idName = "ScreenName";
+		String hdfsFile = "HDFS/MentionedBy.hdfs";
+		String countField = "MentionCount";
+		String collName = "User";
+		
+		HDFS hdfs = new HDFS(db.db, idName, countField, newField, dbFile, hdfsFile, collName);
+		hdfs.writeDataToFile();
+		TweetFieldCount fieldCounter = new TweetFieldCount();
+		
+		String hadoopInput = "HDFS/input";
+		String hadoopOutput = "HDFS/output";
+		fieldCounter.run(hadoopOutput, hadoopInput);
+		
+		hdfs.writeBackToDB();
+		*/
+		
 	}
 
 }
