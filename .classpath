@@ -5,5 +5,10 @@
 	<classpathentry kind="lib" path="lib/mongo-java-driver-2.12.4.jar"/>
 	<classpathentry kind="lib" path="lib/twitter4j-core-4.0.2.jar"/>
 	<classpathentry kind="lib" path="lib/twitter4j-stream-4.0.2.jar"/>
+	<classpathentry kind="lib" path="lib/hadoop-common-2.5.2.jar"/>
+	<classpathentry kind="lib" path="lib/hadoop-mapreduce-client-app-2.5.2.jar"/>
+	<classpathentry kind="lib" path="lib/hadoop-mapreduce-client-common-2.5.2.jar"/>
+	<classpathentry kind="lib" path="lib/hadoop-mapreduce-client-core-2.5.2.jar"/>
+	<classpathentry kind="lib" path="lib/hadoop-mapreduce-client-hs-2.5.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

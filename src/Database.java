@@ -1,14 +1,25 @@
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.TreeMap;
+
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.DuplicateKeyException;
 import com.mongodb.MongoClient;
@@ -43,7 +54,7 @@ public class Database {
 	
 	
 	public void createDB(String server, int port, String dbName) {
-	
+		
 		MongoClient mongoClient = null;
 		try {
 			mongoClient = new MongoClient(server, port);
@@ -193,6 +204,88 @@ public class Database {
 		BasicDBObject updateCommand = new BasicDBObject("$inc", new BasicDBObject("LinkCount", 1));
 		BasicDBObject query = new BasicDBObject("LinkString", linkString);
 		coll.update(query, updateCommand);
+	}
+	
+	public void getFlatFile(String collName, String idName, String fieldName, String fileName) {
+		File flatFile = new File(fileName);
+		BufferedWriter writer = null;
+		try {
+			writer = new BufferedWriter(new FileWriter(flatFile));
+			DBCursor cursor = db.getCollection(collName).find();
+			while (cursor.hasNext()) {
+				DBObject obj = cursor.next();
+				BasicDBList list = (BasicDBList) obj.get(fieldName);
+				for(Object elem : list) {
+					writer.write(obj.get(idName) + " " + (String)elem);
+					writer.newLine();
+				}
+			}
+			writer.close();
+		} catch (IOException exc) {
+			System.out.println("Errors in output file! Will exit now");
+			System.exit(0);
+		}
+	}
+	
+	public void writeBackToDB(String fileName, String collName, String idName, String fieldName) {
+		File fin = new File(fileName);
+		DBCollection coll = db.getCollection(collName);
+		Map<String,List<String>> allFields = new HashMap<String,List<String>>();
+		Scanner reader = null;
+		try {
+			reader = new Scanner(fin);
+			while (reader.hasNextLine()) {
+				String[] arr = reader.nextLine().split("\\s+");
+				if (!allFields.containsKey(arr[0]))
+					allFields.put(arr[0], new ArrayList<String>());
+				allFields.get(arr[0]).add(arr[1]+" "+arr[2]);
+			}
+			reader.close();
+			
+		} catch (FileNotFoundException e) {
+			System.out.println("File Not Found! Will exit now");
+			System.exit(0);
+		}
+		System.out.print("Done With Parsing");
+		for(Entry<String, List<String>> entry : allFields.entrySet()) {
+			DBObject query = new BasicDBObject(idName, entry.getKey());
+			BasicDBList list = new BasicDBList();
+			for(String elem : entry.getValue()) {
+				String[] elemArr = elem.split("\\s+");
+				DBObject obj = new BasicDBObject("Name", elemArr[0]).append("Count", elemArr[1]);
+				list.add(obj);
+			}
+			BasicDBObject updateCommand = new BasicDBObject("$set", new BasicDBObject(fieldName, list));
+			coll.update(query, updateCommand);
+		}
+	}
+	
+	public void getFirst() {
+		DBCollection coll = db.getCollection("HashTag");
+		DBCursor cursor = coll.find().sort(new BasicDBObject("HashTagCount", -1)).limit(10);
+		for (DBObject dbObject : cursor) {
+	        System.out.println(dbObject.get("HashTagName"));
+	    }
+	}
+	
+	public void getAllSorted(String collName, String idField, String countField) {
+		DBCollection coll = db.getCollection(collName);
+		Map<Integer,List<String>> map = new TreeMap<Integer,List<String>>(Collections.reverseOrder());
+		DBCursor cursor = coll.find();
+		for(DBObject obj : cursor) {
+			Integer objCount = (Integer)obj.get(countField);
+			if (!map.containsKey(objCount))
+				map.put(objCount, new ArrayList<String>());
+			map.get(objCount).add((String)obj.get(idField));
+		}
+		int i = 0;
+		Iterator<Integer> iter = map.keySet().iterator();
+		while(iter.hasNext() && i<3) {
+			Integer count = iter.next();
+			for(String obj : map.get(count))
+				System.out.println("Count = "+count+" -- Object = "+obj);
+			i++;
+		}
 	}
 
 }
