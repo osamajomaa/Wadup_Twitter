@@ -1,9 +1,13 @@
 import java.awt.Font;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.Map.Entry;
+
+import javax.imageio.ImageIO;
 
 import org.jfree.chart.ChartColor;
 import org.jfree.chart.ChartFactory;
@@ -143,6 +147,29 @@ public class DataVis {
 	        } catch(IOException e) {
 	            e.printStackTrace();
 	        }
+	}
+	
+	public void plotMap(List<String> locations) {
+		StringBuffer url = new StringBuffer("https://maps.googleapis.com/maps/api/staticmap?");
+		url.append("center=0");
+		url.append("&size=800x400");
+		url.append("&scale=2");
+		url.append("&maptype=roadmap");
+		url.append("&format=png");
+		url.append("&zoom=1");
+		for(String loc : locations) {
+			url.append("&markers=color:red%7C"+loc);
+		}
+		System.out.println(url.toString());
+		try {
+			
+		    BufferedImage img = ImageIO.read(new URL(url.toString()));
+		    File outputfile = new File("map.png");
+		    ImageIO.write(img, "png", outputfile);
+		    System.out.println("Saved!");
+		    } catch (Exception ex) {
+		         System.out.println("Error!" + ex);
+		    }
 	}
 
 }
