@@ -23,7 +23,7 @@ import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.general.DefaultPieDataset;
 
 
-public class DataVis {
+public class Charting {
 
 	public void plotBarChart(TreeMap<String,Integer> data, String title, String xTitle, String yTitle) {
 		DefaultCategoryDataset dataSet = new DefaultCategoryDataset();

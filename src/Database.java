@@ -5,9 +5,11 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -15,6 +17,9 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeMap;
 
+import org.bson.types.BasicBSONList;
+
+import com.mongodb.AggregationOutput;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
@@ -260,32 +265,60 @@ public class Database {
 		}
 	}
 	
-	public void getFirst() {
-		DBCollection coll = db.getCollection("HashTag");
-		DBCursor cursor = coll.find().sort(new BasicDBObject("HashTagCount", -1)).limit(10);
+	public Map<String,Integer> getTopDocs(String collName, String countField, String nameField, int n) {
+		Map<String,Integer> docs = new TreeMap<String,Integer>();
+		DBCollection coll = db.getCollection(collName);
+		DBCursor cursor = coll.find().sort(new BasicDBObject(countField, -1)).limit(n);
 		for (DBObject dbObject : cursor) {
-	        System.out.println(dbObject.get("HashTagName"));
+			docs.put((String)dbObject.get(nameField), (Integer)dbObject.get(countField));
 	    }
+		return docs;
 	}
 	
-	public void getAllSorted(String collName, String idField, String countField) {
+	public Map<String,Integer> getTopArrayDocs(String collName, String idField, String idName, String docArray, 
+								String docArrayField, int n, int max) {
 		DBCollection coll = db.getCollection(collName);
-		Map<Integer,List<String>> map = new TreeMap<Integer,List<String>>(Collections.reverseOrder());
-		DBCursor cursor = coll.find();
-		for(DBObject obj : cursor) {
-			Integer objCount = (Integer)obj.get(countField);
-			if (!map.containsKey(objCount))
-				map.put(objCount, new ArrayList<String>());
-			map.get(objCount).add((String)obj.get(idField));
+		DBObject unwind = new BasicDBObject("$unwind", docArray);
+		DBObject match = new BasicDBObject("$match", new BasicDBObject(idField, idName));
+		DBObject project = new BasicDBObject("$project", new BasicDBObject("_id",0).append(docArray, 1));
+		DBObject sort = new BasicDBObject("$sort", new BasicDBObject(docArray+"."+docArrayField, -1));
+		DBObject limit = new BasicDBObject("$limit", max);
+		List<DBObject> pipeline = Arrays.asList(unwind, match, project, sort, limit);
+		AggregationOutput output = coll.aggregate(pipeline);
+		Map<String,Integer> docs = new LinkedHashMap<String,Integer>();
+		for(DBObject result : output.results()) {
+			docs.put((String)((DBObject) result.get(docArray)).get(docArrayField), (Integer)((DBObject) result.get(docArray)).get("Count"));
 		}
-		int i = 0;
-		Iterator<Integer> iter = map.keySet().iterator();
-		while(iter.hasNext() && i<3) {
-			Integer count = iter.next();
-			for(String obj : map.get(count))
-				System.out.println("Count = "+count+" -- Object = "+obj);
-			i++;
-		}
+		return docs;
 	}
+	
+	public Map<String,Integer> getLangDistro(String idName) {
+		DBCollection coll = db.getCollection("HashTag");
+		DBObject unwind = new BasicDBObject("$unwind", "Langs");
+		DBObject match = new BasicDBObject("$match", new BasicDBObject("HashTagName", idName));
+		DBObject project = new BasicDBObject("$project", new BasicDBObject("_id",0).append("Langs", 1));
+		List<DBObject> pipeline = Arrays.asList(unwind, match, project);
+		AggregationOutput output = coll.aggregate(pipeline);
+		Map<String,Integer> langs = new LinkedHashMap<String,Integer>();
+		for(DBObject result : output.results()) {
+			BasicDBObject obj = (BasicDBObject) result.get("Langs");
+			langs.put((String)obj.get("Lang"), (Integer)obj.get("Count"));
+		}
+		return langs;
+	}
+	
+	public List<String> getArray(String collName, String idField, String idName, String arrayField, String arrayName) {
+		DBCollection coll = db.getCollection(collName);
+		DBObject query = new BasicDBObject(idField, idName);
+		DBCursor cursor = coll.find(query);
+		List<String> dbArray = new ArrayList<String>();
+		while(cursor.hasNext()) {
+			BasicDBObject result = (BasicDBObject) cursor.next();
+			BasicDBList array = (BasicDBList) result.get(arrayName);
+			for(Object elem : array)
+				dbArray.add((String)elem);
+		}
+		return dbArray;
+	}	
 
 }
