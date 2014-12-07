@@ -10,5 +10,8 @@
 	<classpathentry kind="lib" path="lib/hadoop-mapreduce-client-common-2.5.2.jar"/>
 	<classpathentry kind="lib" path="lib/hadoop-mapreduce-client-core-2.5.2.jar"/>
 	<classpathentry kind="lib" path="lib/hadoop-mapreduce-client-hs-2.5.2.jar"/>
+	<classpathentry kind="lib" path="lib/jcommon-1.0.23.jar"/>
+	<classpathentry kind="lib" path="lib/jfreechart-1.0.19-experimental.jar"/>
+	<classpathentry kind="lib" path="lib/jfreechart-1.0.19.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
