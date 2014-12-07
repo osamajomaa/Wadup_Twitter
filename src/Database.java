@@ -276,12 +276,12 @@ public class Database {
 	}
 	
 	public Map<String,Integer> getTopArrayDocs(String collName, String idField, String idName, String docArray, 
-								String docArrayField, int n, int max) {
+								String docArrayField, int max) {
 		DBCollection coll = db.getCollection(collName);
 		DBObject unwind = new BasicDBObject("$unwind", docArray);
 		DBObject match = new BasicDBObject("$match", new BasicDBObject(idField, idName));
 		DBObject project = new BasicDBObject("$project", new BasicDBObject("_id",0).append(docArray, 1));
-		DBObject sort = new BasicDBObject("$sort", new BasicDBObject(docArray+"."+docArrayField, -1));
+		DBObject sort = new BasicDBObject("$sort", new BasicDBObject(docArray+".Count", -1));
 		DBObject limit = new BasicDBObject("$limit", max);
 		List<DBObject> pipeline = Arrays.asList(unwind, match, project, sort, limit);
 		AggregationOutput output = coll.aggregate(pipeline);
@@ -302,12 +302,13 @@ public class Database {
 		Map<String,Integer> langs = new LinkedHashMap<String,Integer>();
 		for(DBObject result : output.results()) {
 			BasicDBObject obj = (BasicDBObject) result.get("Langs");
-			langs.put((String)obj.get("Lang"), (Integer)obj.get("Count"));
+			if ((Integer)obj.get("Count") > 0)
+				langs.put((String)obj.get("Lang"), (Integer)obj.get("Count"));
 		}
 		return langs;
 	}
 	
-	public List<String> getArray(String collName, String idField, String idName, String arrayField, String arrayName) {
+	public List<String> getArray(String collName, String idField, String idName, String arrayName) {
 		DBCollection coll = db.getCollection(collName);
 		DBObject query = new BasicDBObject(idField, idName);
 		DBCursor cursor = coll.find(query);

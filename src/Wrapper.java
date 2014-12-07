@@ -1,3 +1,10 @@
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import com.mongodb.DB;
+
 
 public final class Wrapper {
 
@@ -7,6 +14,38 @@ public final class Wrapper {
 	
 	private Wrapper() {}	
 	
+	public static void plotTopUsers(Database db, Charting charting) {
+		Map<String,Integer> users = db.getTopDocs("User", "MentionCount", "ScreenName", 10);
+		charting.plotBarChart(users, "Most Popular User on Twitter", "User Screen Name", "User Mention Count");
+	}
+	
+	public static void plotTopHashTags(Database db, Charting charting) {
+		Map<String,Integer> users = db.getTopDocs("HashTag", "HashTagCount", "HashTagName", 10);
+		charting.plotBarChart(users, "Trending Hashtags on Twitter", "HashTag Name", "HashTag Count");
+	}
+	
+	public static void plotLangsDistro(Database db, Charting charting, String hashtag) {
+		Map<String,Integer> langs = db.getLangDistro(hashtag);
+		charting.plotPieChart(langs, "Distribution of Languages for #"+hashtag);
+	}
+	
+	public static void plotLocsOnMap(Database db, Charting charting, String hashtag) {
+		List<String> locs = db.getArray("HashTag", "HashTagName", hashtag, "Locations");
+		charting.plotMap(locs);
+	}
+	
+	public static void plotHashtagTweetersDistro(Database db, Charting charting, String hashtag) {
+		Map<String,Integer> tweeters = db.getTopArrayDocs("HashTag", "HashTagName", hashtag, "HashTagUsers", "Name", 0);
+		Map<Integer,Integer> freqs = new HashMap<Integer,Integer>();
+		for(Entry<String, Integer> entry : tweeters.entrySet()) {
+			if (!freqs.containsKey(entry.getKey()))
+				freqs.put(entry.getValue(), 1);
+			else
+				freqs.put(entry.getValue(), freqs.get(entry.getValue())+1);
+		}
+		charting.plotLineChart(freqs, "Numer of Tweets with #"+hashtag+" by Screen Name", "Screen Name Frequency", 
+								"Number of Tweets with #"+hashtag);
+	}
 	
 	
 	public static void main(String[] args) {

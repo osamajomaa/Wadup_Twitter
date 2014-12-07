@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
 import java.util.Map.Entry;
 
@@ -25,7 +26,7 @@ import org.jfree.data.general.DefaultPieDataset;
 
 public class Charting {
 
-	public void plotBarChart(TreeMap<String,Integer> data, String title, String xTitle, String yTitle) {
+	public void plotBarChart(Map<String,Integer> data, String title, String xTitle, String yTitle) {
 		DefaultCategoryDataset dataSet = new DefaultCategoryDataset();
 		for(Entry<String,Integer> entry : data.entrySet()) {
 			dataSet.addValue(entry.getValue(), "series", entry.getKey());
@@ -53,7 +54,7 @@ public class Charting {
 	        }
 	}
 	
-	public void plotLineChart(TreeMap<Integer,Integer> data, String title, String xTitle, String yTitle) {
+	public void plotLineChart(Map<Integer,Integer> data, String title, String xTitle, String yTitle) {
 		DefaultCategoryDataset dataSet = new DefaultCategoryDataset();
 		for(Entry<Integer,Integer> entry : data.entrySet()) {
 			dataSet.addValue(entry.getValue(), "series", entry.getKey());
@@ -87,7 +88,7 @@ public class Charting {
         
 	}
 	
-	public void plotMultipleLineCharts(List<TreeMap<Integer,Integer>> data, String title, String xTitle, String yTitle) {
+	public void plotMultipleLineCharts(List<Map<Integer,Integer>> data, String title, String xTitle, String yTitle) {
 		DefaultCategoryDataset dataSet = new DefaultCategoryDataset();
 		for(int i=0; i<data.size(); i++) {
 			for(Entry<Integer,Integer> entry : data.get(i).entrySet()) {
@@ -123,7 +124,7 @@ public class Charting {
         
 	}
 	
-	public static void plotPieChart(TreeMap<String,Integer> data, String title) {
+	public void plotPieChart(Map<String,Integer> data, String title) {
 		DefaultPieDataset dataset = new DefaultPieDataset();
 		for(Entry<String,Integer> entry : data.entrySet()) {
 			dataset.setValue(entry.getKey(), entry.getValue());
