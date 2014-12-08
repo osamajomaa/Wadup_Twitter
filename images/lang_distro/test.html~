@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html> 
+<head> 
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8" /> 
+  <title>Google Maps Multiple Markers</title> 
+  <script src="http://maps.google.com/maps/api/js?sensor=false" 
+          type="text/javascript"></script>
+</head> 
+<body>
+  <div id="map" style="width: 1000px; height: 600px;"></div>
+
+  <script type="text/javascript">
+    var locations = [
+      [40.041641, -75.101456, 4],
+      [-33.055006, -71.36892, 5],
+      [-20.791972, -41.400735, 3],
+      [-23.548254, -46.60385, 2],
+    ];
+	
+    var image = 'images/beachflag.png';
+    var map = new google.maps.Map(document.getElementById('map'), {
+      zoom: 2,
+      center: new google.maps.LatLng(0, 0),
+      mapTypeId: google.maps.MapTypeId.ROADMAP
+    });
+
+    var infowindow = new google.maps.InfoWindow();
+
+    var marker, i;
+
+    for (i = 0; i < locations.length; i++) {  
+      marker = new google.maps.Marker({
+        position: new google.maps.LatLng(locations[i][0], locations[i][1]),
+        map: map,
+	icon: image
+      });
+
+      
+    }
+  </script>
+</body>
+</html>

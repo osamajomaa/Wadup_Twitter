@@ -7,6 +7,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -15,10 +16,13 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import org.bson.types.BasicBSONList;
 
+import com.mongodb.AggregationOptions;
 import com.mongodb.AggregationOutput;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
@@ -34,6 +38,7 @@ public class Database {
 	
 	public  DB db;
 	public Map<String, String> Languages;
+	public int LANGS_COUNT;
 	
 	public Database() {
 		loadLangs();
@@ -45,12 +50,14 @@ public class Database {
 		Languages = new HashMap<String,String>();
 		Scanner reader = null;
 		try {
+			
 			reader = new Scanner(fin);
 			while (reader.hasNextLine()) {
 				String[] arr = reader.nextLine().split("\\s+");
 				Languages.put(arr[0], arr[1]);
 			}
 			reader.close();
+			LANGS_COUNT = Languages.size();
 		} catch (FileNotFoundException e) {
 			System.out.println("File Not Found! Will exit now");
 			System.exit(0);
@@ -265,45 +272,97 @@ public class Database {
 		}
 	}
 	
-	public Map<String,Integer> getTopDocs(String collName, String countField, String nameField, int n) {
-		Map<String,Integer> docs = new TreeMap<String,Integer>();
+	
+	static <K,V extends Comparable<? super V>>
+	SortedSet<Map.Entry<K,V>> entriesSortedByValues(Map<K,V> map) {
+	    SortedSet<Map.Entry<K,V>> sortedEntries = new TreeSet<Map.Entry<K,V>>(
+	        new Comparator<Map.Entry<K,V>>() {
+	            @Override public int compare(Map.Entry<K,V> e1, Map.Entry<K,V> e2) {
+	                int res = e1.getValue().compareTo(e2.getValue());
+	                return res != 0 ? res : 1;
+	            }
+	        }
+	    );
+	    sortedEntries.addAll(map.entrySet());
+	    return sortedEntries;
+	}
+	
+	public Map<String, Integer> getTopDocs(String collName, String countField, String nameField, int n) {
+		TreeMap<Integer,List<String>> docs = new TreeMap<Integer,List<String>>(Collections.reverseOrder());
 		DBCollection coll = db.getCollection(collName);
 		DBCursor cursor = coll.find().sort(new BasicDBObject(countField, -1)).limit(n);
 		for (DBObject dbObject : cursor) {
-			docs.put((String)dbObject.get(nameField), (Integer)dbObject.get(countField));
+			String name = (String)dbObject.get(nameField);
+			Integer count = (Integer)dbObject.get(countField);
+			if (!docs.containsKey(count))
+				docs.put(count, new ArrayList<String>());
+			docs.get(count).add(name);
 	    }
-		return docs;
+		Map<String, Integer> sortedDocs = new LinkedHashMap<String, Integer>();
+		for(Map.Entry<Integer, List<String>> entry : docs.entrySet()) {
+			for(String name : entry.getValue())
+				sortedDocs.put(name, entry.getKey());
+		}
+		return sortedDocs;
 	}
 	
-	public Map<String,Integer> getTopArrayDocs(String collName, String idField, String idName, String docArray, 
-								String docArrayField, int max) {
+	public Map<String, Integer> getTopArrayDocs(String collName, String idField, String idName, String docArray, 
+												String docArrayField, int max) {
 		DBCollection coll = db.getCollection(collName);
-		DBObject unwind = new BasicDBObject("$unwind", docArray);
+		DBObject unwind = new BasicDBObject("$unwind", "$"+docArray);
 		DBObject match = new BasicDBObject("$match", new BasicDBObject(idField, idName));
 		DBObject project = new BasicDBObject("$project", new BasicDBObject("_id",0).append(docArray, 1));
-		DBObject sort = new BasicDBObject("$sort", new BasicDBObject(docArray+".Count", -1));
+		
 		DBObject limit = new BasicDBObject("$limit", max);
-		List<DBObject> pipeline = Arrays.asList(unwind, match, project, sort, limit);
+		DBObject sort = new BasicDBObject("$sort", new BasicDBObject(docArray+".Count", -1));
+		List<DBObject> pipeline = Arrays.asList(match, project, unwind, sort, limit);
 		AggregationOutput output = coll.aggregate(pipeline);
-		Map<String,Integer> docs = new LinkedHashMap<String,Integer>();
+		/*AggregationOptions aggregationOptions = AggregationOptions.builder()
+                .batchSize(100)
+                .outputMode(AggregationOptions.OutputMode.CURSOR)
+                .allowDiskUse(true)
+                .build();
+		DBCursor cursor = (DBCursor) coll.aggregate(pipeline, aggregationOptions);
+		*/
+		Map<String, Integer> docs = new LinkedHashMap<String, Integer>();
 		for(DBObject result : output.results()) {
 			docs.put((String)((DBObject) result.get(docArray)).get(docArrayField), (Integer)((DBObject) result.get(docArray)).get("Count"));
 		}
 		return docs;
 	}
 	
-	public Map<String,Integer> getLangDistro(String idName) {
+	public Map<String,Integer> getAllCountDocs(String collName, String idField, String idName, String countField) {
+		DBCollection coll = db.getCollection(collName);
+		DBObject query = new BasicDBObject(idField, idName);
+		DBCursor cursor = coll.find(query);
+		Map<String, Integer> countDocs = new HashMap<String, Integer>();
+		while(cursor.hasNext()) {
+			BasicDBObject result = (BasicDBObject) cursor.next();
+			BasicDBList array = (BasicDBList) result.get(countField);
+			for(Object elem : array) {
+				String name = (String)((DBObject) elem).get("Name");
+				Integer count = (Integer)((DBObject) elem).get("Count");
+				countDocs.put(name, count);
+			}
+		}
+		return countDocs;
+	}
+	
+	
+	public Map<String,Integer> getLangDistro(String idName, int max) {
 		DBCollection coll = db.getCollection("HashTag");
-		DBObject unwind = new BasicDBObject("$unwind", "Langs");
+		DBObject unwind = new BasicDBObject("$unwind", "$Langs");
 		DBObject match = new BasicDBObject("$match", new BasicDBObject("HashTagName", idName));
 		DBObject project = new BasicDBObject("$project", new BasicDBObject("_id",0).append("Langs", 1));
-		List<DBObject> pipeline = Arrays.asList(unwind, match, project);
+		DBObject sort = new BasicDBObject("$sort", new BasicDBObject("Langs.Count", -1));
+		DBObject limit = new BasicDBObject("$limit", max);
+		List<DBObject> pipeline = Arrays.asList(unwind, match, project, sort, limit);
 		AggregationOutput output = coll.aggregate(pipeline);
 		Map<String,Integer> langs = new LinkedHashMap<String,Integer>();
 		for(DBObject result : output.results()) {
 			BasicDBObject obj = (BasicDBObject) result.get("Langs");
 			if ((Integer)obj.get("Count") > 0)
-				langs.put((String)obj.get("Lang"), (Integer)obj.get("Count"));
+				langs.put(Languages.get((String)obj.get("Lang")), (Integer)obj.get("Count"));
 		}
 		return langs;
 	}
@@ -316,8 +375,11 @@ public class Database {
 		while(cursor.hasNext()) {
 			BasicDBObject result = (BasicDBObject) cursor.next();
 			BasicDBList array = (BasicDBList) result.get(arrayName);
-			for(Object elem : array)
-				dbArray.add((String)elem);
+			for(Object elem : array) {
+				Double lat = (Double)((DBObject) elem).get("Latitude");
+				Double lng = (Double)((DBObject) elem).get("Longitude");
+				dbArray.add(lat.toString()+","+lng.toString());
+			}
 		}
 		return dbArray;
 	}	
