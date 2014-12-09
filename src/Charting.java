@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Scanner;
-import java.util.TreeMap;
 import java.util.Map.Entry;
 
 import javax.imageio.ImageIO;
@@ -29,7 +28,6 @@ import org.jfree.chart.axis.CategoryAxis;
 import org.jfree.chart.axis.CategoryLabelPositions;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.NumberTickUnit;
-import org.jfree.chart.axis.TickUnit;
 import org.jfree.chart.labels.PieSectionLabelGenerator;
 import org.jfree.chart.labels.StandardPieSectionLabelGenerator;
 import org.jfree.chart.plot.CategoryPlot;
@@ -40,7 +38,6 @@ import org.jfree.chart.renderer.category.CategoryItemRenderer;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.general.DefaultPieDataset;
-import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
@@ -100,7 +97,7 @@ public class Charting {
 		}
 		XYSeriesCollection coll = new XYSeriesCollection(dataSet);
 		JFreeChart chart = ChartFactory.createXYLineChart(
-	            title,       // chart title
+	            title,       				// chart title
 	            xTitle,                    // domain axis label
 	            yTitle,                   // range axis label
 	            coll,                   // data
@@ -120,16 +117,7 @@ public class Charting {
         // customise the range axis...
         final NumberAxis xAxis = (NumberAxis) plot.getRangeAxis();
         xAxis.setTickUnit(new NumberTickUnit(5));
-        //final NumberAxis yAxis = (NumberAxis) plot.getDomainAxis();
-        //yAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
-        //yAxis.setAutoRangeIncludesZero(true);
-        //yAxis.setAutoTickUnitSelection(true);
-        
-        
-        //final NumberAxis xAxis = (NumberAxis) plot.getDomainAxis();
-        //rangeAxis.setAutoTickUnitSelection(true);
-        //rangeAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
-        //rangeAxis.setAutoRangeIncludesZero(true);
+
         // Create an NumberAxis
         try {
             ChartUtilities.saveChartAsPNG(new File(chartName), chart, 800, 600);
@@ -165,22 +153,11 @@ public class Charting {
         final XYPlot plot = (XYPlot) chart.getPlot();
         plot.setBackgroundPaint(ChartColor.white);
         plot.setRangeGridlinePaint(ChartColor.BLACK);
-        XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
-        //renderer.setBaseStroke(new BasicStroke(1));
-        //plot.setRenderer(renderer);
+        
         // customise the range axis...
         final NumberAxis xAxis = (NumberAxis) plot.getRangeAxis();
         xAxis.setTickUnit(new NumberTickUnit(5));
-        //final NumberAxis yAxis = (NumberAxis) plot.getDomainAxis();
-        //yAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
-        //yAxis.setAutoRangeIncludesZero(true);
-        //yAxis.setAutoTickUnitSelection(true);
         
-        
-        //final NumberAxis xAxis = (NumberAxis) plot.getDomainAxis();
-        //rangeAxis.setAutoTickUnitSelection(true);
-        //rangeAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
-        //rangeAxis.setAutoRangeIncludesZero(true);
         // Create an NumberAxis
         try {
             ChartUtilities.saveChartAsPNG(new File(chartName), chart, 800, 600);
